@@ -1,0 +1,76 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  OPERATOR
+}
+
+enum MovementType {
+  ENTRY
+  EXIT
+  LOSS
+}
+
+enum LossReason {
+  DAMAGE
+  LOSS
+  EXPIRATION
+  OTHER
+}
+
+model User {
+  id           String     @id @default(uuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         Role       @default(OPERATOR)
+  isActive     Boolean    @default(true)
+  lastAccessAt DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  movements    Movement[]
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
+model Product {
+  id            String     @id @default(uuid())
+  name          String
+  sku           String     @unique
+  barcode       String?    @unique
+  currentStock  Int        @default(0)
+  minStock      Int        @default(0)
+  costPrice     Decimal    @default(0.00) @db.Decimal(10, 2)
+  sellPrice     Decimal    @default(0.00) @db.Decimal(10, 2)
+  isActive      Boolean    @default(true)
+  categoryId    String
+  category      Category   @relation(fields: [categoryId], references: [id])
+  movements     Movement[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model Movement {
+  id          String       @id @default(uuid())
+  type        MovementType
+  quantity    Int
+  reason      LossReason?
+  observation String?
+  productId   String
+  product     Product      @relation(fields: [productId], references: [id])
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  createdAt   DateTime     @default(now())
+}
